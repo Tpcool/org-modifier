@@ -1,7 +1,6 @@
 package us.polese.org;
 
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -12,7 +11,9 @@ import java.util.Arrays;
 import javax.xml.bind.DatatypeConverter;
 
 public class Org {
+	private final String defaultFilename = "default.txt"; // Name of the default org file.
 	private String filename; // Name of the file (with the extension appended to it).
+	private ArrayList<Integer> fileContents = new ArrayList<Integer>(); // Contains raw bytes of file.
 	private int wait;
 	private int steps;
 	private int beats;
@@ -64,16 +65,31 @@ public class Org {
 		Arrays.fill(instrumentNotes, 0x00);
 	}
 
+	// Stores the info of the .org file supplied by the user.
+	Org(String useFile) {
+		this.filename = useFile;
+		setFileContents(useFile);
+	}
 	
-	Org(String filename) {
+	// Prints the raw file in hexadecimal form.
+	private void printRawFileContents() {
+		System.out.println("Contents of \"" + filename + "\"");
+		for (int i = 0; i < fileContents.size(); i++) {
+			System.out.print(Integer.toHexString(fileContents.get(i)) + " ");
+		}
+		System.out.print("\n");
+	}
+	
+	// Reads the data from an org file and saves it to a variable.
+	private void setFileContents(String useFile) {
 		RandomAccessFile myFile = null;
 		FileChannel myChannel = null;
 		ByteBuffer myBuffer = null;
-		ArrayList<Integer> fileContents = new ArrayList<Integer>();
+		ArrayList<Integer> newFileContents = new ArrayList<Integer>();
 		int bytesRead = 0;
 		
 		try {
-			myFile = new RandomAccessFile(filename, "rw");
+			myFile = new RandomAccessFile(useFile, "rw");
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 			System.exit(0);
@@ -89,14 +105,13 @@ public class Org {
 			System.exit(0);
 		}
 		
+		// Stores the file's content into an array list.
 		while (bytesRead != -1) {
 			myBuffer.flip();
 			
 			while (myBuffer.hasRemaining()) {
-				int i = ((int) myBuffer.get()) & 0xFF;
-				String s = Integer.toHexString(i);
-				System.out.print(s + " ");
-				fileContents.add(i);
+				int i = ((int) myBuffer.get()) & 0xFF; // Bitwise operation to remove unnecessary additional bits.
+				newFileContents.add(i);
 			}
 			
 			myBuffer.clear();
@@ -108,55 +123,27 @@ public class Org {
 			}
 		}
 		
+		// Close the file.
 		try {
 			myFile.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.exit(0);
 		}
+		fileContents = newFileContents;
+	}
+
+	// Retrieves the header ("Org-02", first six bytes of the file) of a standard org file.
+	public String getHeader() {
+		final int startByte = 0x00; final int endByte = 0x06; // Location of header in org file
+		String bytes = "";
+		
+		for (int i = startByte; i < endByte; i++) {
+			bytes += Integer.toHexString(fileContents.get(i));
+		}
+		return bytes;
 	}
 	
-	/* Old method; not necessary anymore
-	// Reads an existing org file and loads the settings into the program.
-	Org(String filename) {
-		FileReader in = null;
-		char fileContents[]; 
-		int length = 0;
-		this.filename = filename;
-
-		
-		
-		// This method of reading the file is probably not the most efficient way.
-		try {
-			in = new FileReader(filename);
-			
-			// Read the file in to get the length
-			while (in.read() != -1)
-				length++;
-			in.close();
-			
-			// Set the character array's length to how long the file is
-			fileContents = new char[length];
-			
-			// Read the file into the character array
-			in = new FileReader(filename);
-			in.read(fileContents);
-			in.close();
-			
-			// Need to find a way to convert from ascii to int properly...
-			
-			System.out.println((char)8364);
-			// wait = Integer.parseInt("" + fileContents[6]);
-			System.out.println(wait + ", " + fileContents[6] + (byte)fileContents[6]);
-		} catch (IOException e) {
-			System.out.println("An error occurred while reading the file.");
-			System.exit(0);
-		} finally {
-			System.out.println(filename + " has been read successfully.");
-		}
-	}
-	*/
-
 	// Converts an integer decimal number to a little endian hex number as a string
 	// with the specific number of bytes.
 	private String toLittleEndian(int val, int bytes) {
