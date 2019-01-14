@@ -26,7 +26,7 @@ public class Org {
 	private int instrumentPitch[];
 	private int instrumentWave[];
 	private int instrumentPi[];
-	private int instrumentNotes[]; 
+	private int instrumentNotes[];
 
 	// Creates a new org with the default settings.
 	Org() {
