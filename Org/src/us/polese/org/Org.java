@@ -137,11 +137,38 @@ public class Org {
 	public String getHeader() {
 		final int startByte = 0x00; final int endByte = 0x06; // Location of header in org file
 		String bytes = "";
+		char[] b;
 		
 		for (int i = startByte; i < endByte; i++) {
-			bytes += Integer.toHexString(fileContents.get(i));
+			b = Character.toChars(fileContents.get(i));
+			bytes += String.valueOf(b);
 		}
 		return bytes;
+	}
+	
+	// Retrieves the org's wait time (tempo equivalent).
+	public int getWait() {
+		final int startByte = 0x06; final int endByte = 0x08; // Location of wait time in org file
+		String values = "";
+		int b = 0;
+		int wait = 0;
+		
+		// Concatenate integer values into a hex string.
+		for (int i = startByte; i < endByte; i++) {
+			b = fileContents.get(i);
+			values += Integer.toHexString(b);
+		}
+		// Convert from little endian format to get the proper wait value.
+		wait = Integer.parseInt(values, 16);
+		values = toLittleEndian(wait, endByte - startByte);
+		wait = Integer.parseInt(values, 16);
+		return wait;
+	}
+	
+	// Modifies the org's wait time (tempo equivalent).
+	public void setWait(int wait) {
+		final int startByte = 0x06; final int endByte = 0x08;
+		
 	}
 	
 	// Converts an integer decimal number to a little endian hex number as a string
